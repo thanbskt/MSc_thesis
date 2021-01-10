@@ -34,6 +34,7 @@ dataset = dataset[[  'user_id',
                      'user_profile_background_color',
                      'user_verified']]
 #checking for miisng values
+
 sns.heatmap(dataset.isnull(),yticklabels=False,cbar=False,cmap='viridis')
 #droping rows without missing values or selecting the non-missing ones
 dataset = dataset[dataset['user_id'].notna() ]
@@ -101,7 +102,12 @@ users["RT_u"] = mean_values['tweet_retweet_count'].values
 users["Fo_u"] = mean_values['user_followers_count'].values
 users["Fe_u"] =  mean_values['user_friends_count'].values
 users['tweets_per_user_tu'] = dataset['user_id'].value_counts().sort_index().values
-user['verified'] = dataset['user_verified']
+users['verified'] = dataset['user_verified']
+
+
+
+users = users[users['Fo_u'].ne(0)]
+users = users[users['Fe_u'].ne(0)]
 
 RT_mean = users["RT_u"].mean()
 Fo_mean = users['Fo_u'].mean()
@@ -141,19 +147,37 @@ b=0.3
 c= 0.5
 
 users["Cu"] = a*(users["Focus(u,x)"] + b*(users["Balance_social(u)"] * users["Credsocial(u)"])) + c*(users["Utility(u,x)"]*users["CredRT(u,x)"])
-users[]
-test = dataset[dataset['user_id'] ==  3307430803]
 
-X = dataset [dataset['user_id'] ==  users[1]]
-testttt = dataset.set_index(['user_id'])
+users.sort_values(by="Cu")["verified"].index.values
+data = np.asarray(users.sort_values(by="Cu")["verified"])
+sns.heatmap(data[:, np.newaxis], cmap='viridis')
 
-test2=dataset.stack()
-dataset.groupby('user_id').cumcount()
+sns.heatmap(users.sort_values(by="Cu")['verified'],cmap='viridis',linecolor = "black")
 
 
-testttt.sort_index(inplace=True)
+users["log_CredRT(u,x)"] = np.log(abs(users["RT_u"] - RT_mean ))
+users["log_Utility(u,x)"] = np.log(abs(((users["RT_u"]*users["Fo_u"])/users['tweets_per_user_tu']) - ((RT_mean*Fo_mean)/tx) ))
+users["log_Credsocial(u)"] = np.log(abs((users["Fo_u"] /users['tweets_per_user_tu']) - (Fo_mean/t)))
+users["log_Balance_social(u)"] = np.log(abs((users["Fo_u"]/users["Fe_u"]) - (Fo_mean/Fe_mean)))
+#because we are dealing with one topic 
+#equation (3) bocomes the same with equation (5)
+users["log_Credsocial(u,x)"] = np.log(abs(users["Fo_u"]/users['tweets_per_user_tu'] - Fo_mean/tx))
+# and equation 6 becomes 1
+users["log_Focus(u,x)"] = np.log(abs(users['tweets_per_user_tu'].sum()/users['tweets_per_user_tu'].sum()))
 
-dataset.nunique()
+
+users["Cu_with_log_values"] = a*(users["log_Focus(u,x)"] + b*(users["log_Balance_social(u)"] * users["log_Credsocial(u)"])) + c*(users["log_Utility(u,x)"]*users["log_CredRT(u,x)"])
+
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+
+
+test = np.log(users["Cu"])
+test = pd.DataFrame(users["Cu"])
+test['loged_Cu'] = np.log(users["Cu"])
+test2 = test['loged_Cu']
+test["scaled"]= scaler.fit_transform(test["loged_Cu"].values.reshape(-1,1))
+
 
 
 
