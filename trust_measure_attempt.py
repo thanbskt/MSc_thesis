@@ -8,7 +8,6 @@ Created on Tue Nov 24 03:29:25 2020
 #importing usefull libraries libraries
 import pandas as pd
 import numpy as np
-from ast import literal_eval
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -32,12 +31,13 @@ dataset = dataset[[  'user_id',
                      'user_following',
                      'user_friends_count',
                      'user_profile_background_color',
-                     'user_verified']]
+                     'user_verified',
+                     "user_screen_name"]]
 #checking for miisng values
 
 sns.heatmap(dataset.isnull(),yticklabels=False,cbar=False,cmap='viridis')
 #droping rows without missing values or selecting the non-missing ones
-dataset = dataset[dataset['user_id'].notna() ]
+dataset = dataset[dataset['user_id'].notna()]
 #sorting our values based on user_id
 dataset = dataset.sort_values(by=['user_id']).reset_index(drop=True)
 
@@ -70,6 +70,10 @@ plt.xlabel('tweet_id')
 plt.scatter(x,y)
 plt.show()
 
+
+
+
+
 dataset = dataset[["user_id",
                  'tweet_full_text',
                  "tweet_id",
@@ -79,22 +83,19 @@ dataset = dataset[["user_id",
                  "user_followers_count",
                  "user_friends_count",
                  "user_profile_background_color",
-                 "user_verified"]]
+                 "user_verified",
+                 "user_screen_name"]]
+
+dataset = dataset[dataset['user_followers_count'].ne(0)]
+dataset = dataset[dataset['user_friends_count'].ne(0)]
+dataset = dataset.reset_index(drop=True)
 
 
 
-
-
-
-
-#dataset['user_id'] = dataset['user_id'].astype('Int64')
-
-#we isolate the unique user by their id
 users_ids = dataset['user_id'].unique().tolist()
 users = pd.DataFrame(data = users_ids,columns = ['user_id']).sort_values(by=['user_id'])
-mean_values = dataset.groupby('user_id').mean().sort_index()
+mean_values = dataset.groupby('user_id').mean().sort_index().reset_index()
 #dataset['tweet_user']= dataset['tweet_user'].apply(literal_eval)
-
 
 
 #We try to implement the equations in the paper: MODELING TOPIC SPECIFIC CREDIBILITY ON TWITTER
@@ -102,17 +103,21 @@ users["RT_u"] = mean_values['tweet_retweet_count'].values
 users["Fo_u"] = mean_values['user_followers_count'].values
 users["Fe_u"] =  mean_values['user_friends_count'].values
 users['tweets_per_user_tu'] = dataset['user_id'].value_counts().sort_index().values
-users['verified'] = dataset['user_verified']
+ 
 
 
 
-users = users[users['Fo_u'].ne(0)]
-users = users[users['Fe_u'].ne(0)]
+tt =users[users["user_id"] == 248917051]
+ttt = dataset [ dataset['user_screen_name'] == 'iAmDGOOD']
 
+[users["user_id"] == 248917051]
 RT_mean = users["RT_u"].mean()
 Fo_mean = users['Fo_u'].mean()
 Fe_mean = users['Fe_u'].mean()
 tx = t = len(dataset)
+
+
+
 #equation (1) CredRT(u,x) = |RTu - RTx_mean|
 
 #equation (2) Utility(u,x) = |RTu,x*Fo(u)/t(u,x) -RTx_mean * F(o,x)_mean/tx 
@@ -148,57 +153,50 @@ c= 0.5
 
 users["Cu"] = a*(users["Focus(u,x)"] + b*(users["Balance_social(u)"] * users["Credsocial(u)"])) + c*(users["Utility(u,x)"]*users["CredRT(u,x)"])
 
-users.sort_values(by="Cu")["verified"].index.values
-data = np.asarray(users.sort_values(by="Cu")["verified"])
+users.sort_values(by="Cu_with_log_values")["verified"].index.values
+data = np.asarray(users.sort_values(by="Cu_with_log_values")["verified"],dtype='float64')
 sns.heatmap(data[:, np.newaxis], cmap='viridis')
 
-sns.heatmap(users.sort_values(by="Cu")['verified'],cmap='viridis',linecolor = "black")
+sns.heatmap(users.sort_values(by="Cu_with_log_values")['verified'],cmap='viridis',linecolor = "black")
 
 
-users["log_CredRT(u,x)"] = np.log(abs(users["RT_u"] - RT_mean ))
-users["log_Utility(u,x)"] = np.log(abs(((users["RT_u"]*users["Fo_u"])/users['tweets_per_user_tu']) - ((RT_mean*Fo_mean)/tx) ))
-users["log_Credsocial(u)"] = np.log(abs((users["Fo_u"] /users['tweets_per_user_tu']) - (Fo_mean/t)))
-users["log_Balance_social(u)"] = np.log(abs((users["Fo_u"]/users["Fe_u"]) - (Fo_mean/Fe_mean)))
+users["log_CredRT(u,x)"] = np.log(abs(users["RT_u"] - RT_mean )+1)
+users["log_Utility(u,x)"] = np.log(abs(((users["RT_u"]*users["Fo_u"])/users['tweets_per_user_tu']) - ((RT_mean*Fo_mean)/tx) ) +1)
+users["log_Credsocial(u)"] = np.log(abs((users["Fo_u"] /users['tweets_per_user_tu']) - (Fo_mean/t)) +1)
+users["log_Balance_social(u)"] = np.log(abs((users["Fo_u"]/users["Fe_u"]) - (Fo_mean/Fe_mean)) +1)
 #because we are dealing with one topic 
 #equation (3) bocomes the same with equation (5)
-users["log_Credsocial(u,x)"] = np.log(abs(users["Fo_u"]/users['tweets_per_user_tu'] - Fo_mean/tx))
+users["log_Credsocial(u,x)"] = np.log(abs(users["Fo_u"]/users['tweets_per_user_tu'] - Fo_mean/tx)+1)
 # and equation 6 becomes 1
 users["log_Focus(u,x)"] = np.log(abs(users['tweets_per_user_tu'].sum()/users['tweets_per_user_tu'].sum()))
 
 
-users["Cu_with_log_values"] = a*(users["log_Focus(u,x)"] + b*(users["log_Balance_social(u)"] * users["log_Credsocial(u)"])) + c*(users["log_Utility(u,x)"]*users["log_CredRT(u,x)"])
+users["Cu_with_log_values"] = a*(users["log_Focus(u,x)"] + b*(users["log_Balance_social(u)"] * users["log_Credsocial(u)"])) + c*(users["Focus(u,x)"]*users["log_CredRT(u,x)"])
 
 from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler()
 
+sns.heatmap(users[["Cu_with_log_values","Cu"]].corr(),cmap="coolwarm",annot=True)
 
-test = np.log(users["Cu"])
+
+users["Cu_final_logged"] = np.log(users["Cu"])
 test = pd.DataFrame(users["Cu"])
 test['loged_Cu'] = np.log(users["Cu"])
-test2 = test['loged_Cu']
-test["scaled"]= scaler.fit_transform(test["loged_Cu"].values.reshape(-1,1))
+users["scaled"]= scaler.fit_transform(users["Cu_final_logged"].values.reshape(-1,1))
+
+test [ "norm_with_no_log"] = scaler.fit_transform(users["Cu"].values.reshape(-1,1))
 
 
 
 
+users["verified_to_test"] =  dataset.drop_duplicates(subset=['user_id']).reset_index(drop=True)["user_verified"]
 
 
+#we can figure out that scaling and then normalizing is better to keep better value range
+#values tend to be less sesitive and tend to be less extreme and thus more interpretable
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+test["scaled"].hist()
 
 
 
