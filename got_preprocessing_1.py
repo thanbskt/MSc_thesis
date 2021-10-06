@@ -15,7 +15,7 @@ from ast import literal_eval
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_colwidth', 100)
 
-#kanoume import to dataset
+#importing dataset
 
 train = pd.read_csv("users_with_text")
 train = train[['user_id','tweets','user_favorites','listed_count','statuses_count','verified','final_cred_score']]
