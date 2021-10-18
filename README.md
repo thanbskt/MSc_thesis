@@ -11,4 +11,4 @@ The purpose of the master thesis is to measure the user credibility and predict 
 2) In the second step we preprocess our data and we create new NLP features like POS tags. We concat them on the initial dataset and we group our data by the users. We add the text data for every user according to their messages.  
 The code for this step is on files got_preprocessing_1.py and got_preprocessing_2.py
 
-3)In the final step we produce the hybrid deep learning model that can be train both on numerical and text data using word embeddings technique. In the end we evaluate our data using accuracy and validation accuracy in file hybrid_model.py
+3) In the final step we produce the hybrid deep learning model that can be train both on numerical and text data using word embeddings technique. In the end we evaluate our data using accuracy and validation accuracy in file hybrid_model.py
