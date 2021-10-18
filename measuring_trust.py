@@ -51,21 +51,6 @@ dataset["user_id"] = dataset["user_id"].astype(float)
 dataset = dataset.sort_values(by=['user_id']).reset_index(drop=True)
 
 
-"""
-#visualize the most common colors of backgraound profile
-colors = dataset['user_profile_background_color'].value_counts().index.values.tolist()
-color_counts = dataset['user_profile_background_color'].value_counts().values.tolist()
-colors = colors[:20]
-color_counts=color_counts[:20]
-        #
-for count,values in enumerate(colors):
-    colors[count] = "#"+values
-    print(count,values,"  ",colors[count])
-
-plt.bar(colors,color_counts ,color=colors)
-plt.xticks(rotation=30)
-plt.show()
-"""
 
 #visualize tweets count over some time period
 tweet_dataset_5min = dataset.groupby(pd.Grouper(key='created_at', freq='H', convention='start')).size().plot()
@@ -139,7 +124,7 @@ Fe_mean = users['Fe_u'].mean()
 tx = t = len(dataset)
 
 
-
+# The equations are based on the papaer: Modeling Topic Specific Credibility in Twitter by Byungkyu Kang et al.
 #equation (1) CredRT(u,x) = |RTu - RTx_mean|
 
 #equation (2) Utility(u,x) = |RTu,x*Fo(u)/t(u,x) -RTx_mean * F(o,x)_mean/tx 
@@ -273,6 +258,6 @@ for k,v in enumerate(users_ids):
         users["tweets"][k] =  users["tweets"][k] + " " +  m["text"][i]
                 
 
-#finally we save both datasets , users dataset is the main one                  
+#finally we save both datasets , "users_with_text" dataset is the main one                  
 users.to_csv('users_with_text',index=False)
 dataset.to_csv('got_dataset',index = False)

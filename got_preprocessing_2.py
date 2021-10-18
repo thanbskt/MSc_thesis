@@ -35,38 +35,31 @@ kainourgio['tweets'] = kainourgio['tweets'].replace(r'\<u\+2019>', "'", regex=Tr
 kainourgio['tweets'] = kainourgio['tweets'].replace(r'<u+(.*?)>', ' ', regex=True)
     
 
-#vgazoume ta links
+#removing links
 kainourgio['tweets'] = kainourgio['tweets'].replace(r'http\S+|www\S+|https\S+', ' ', regex=True)
-# kanoume replace ta usernames
+# replace usernames
 kainourgio['tweets'] = kainourgio['tweets'].replace(r'@([A-Za-z0-9_]+)', ' ', regex=True)
-#kanoume replace ta hashtags
+# replace  hashtags
 kainourgio['tweets'] = kainourgio['tweets'].replace(r'#([A-Za-z0-9_]+)', ' ', regex=True)
 #removal of more of two consequtive characters
 
 kainourgio['tweets'] = kainourgio['tweets'].str.replace(r'(.)\1+', r'\1\1')
-#kanoume replace to &amp pou vrisketai synxa
+#replace &amp word
 kainourgio['tweets'] = kainourgio['tweets'].replace('&amp', ' ', regex=True)
-#re.sub('[^a-zA-Z]', ' ', kainourgio['OriginalTweet'][34])
-#vazoume ena keno sta ellinika erwtimatika i anw teleia stin agglika glwssa
+#removing specific characters, these characters can be removed properly using regex 
 kainourgio['tweets'] = kainourgio['tweets'].replace(';', '', regex=True)
 
 kainourgio['tweets'] = kainourgio['tweets'].replace('-', ' ', regex=True)
 kainourgio['tweets'] = kainourgio['tweets'].replace('[?]|[-]|[!]', ' ', regex=True)
 kainourgio['tweets'] = kainourgio['tweets'].replace('[.]', ' . ', regex=True)
 
-#afairoume ta mi aparaitita kena
+#removing gaps
 kainourgio['tweets'] = kainourgio['tweets'].replace('\s+', ' ', regex=True)
-#diagrafoume toys mi asci xaraktires
+#removing ASCI characters
 kainourgio['tweets'] = kainourgio['tweets'].str.encode('ascii', 'ignore').str.decode('ascii')
 
-for i in range(0,100):
-    s = kainourgio['tweets'][i]
-    print(s)
-    
 
-#removal of more of two consequtive characters
-
-#eisagwgi twn stopwords kai anadiorganwsi tou lathos tou spacy pou den eixe swsta stopwords list
+#we add new stop words 
 
 import spacy
 nlp = spacy.load('en_core_web_lg')
@@ -100,7 +93,8 @@ def diadikasia_preprocessing_new(string):
 	#normalize tis lexeis dld to n't tha ginei not
 	#string_two = [token.norm_ for token in string_one]
 		
-	#vgazoume simia stixis kai kena symbola kai lexeis panw apo duo sumvola   
+	
+	#we remove punctuation with spacy and words with two or less characters   
 	string_two = [token.text for token in string_one if not token.is_punct 
 			   | token.is_space 
 			   | (token.pos_ == 'PUNCT') 
@@ -109,7 +103,7 @@ def diadikasia_preprocessing_new(string):
 			   | (token.pos_ == "NUM")]
 	string_three = ' '.join([str(elem) for elem in string_two])
 	string_four = nlp(string_three)
-	#dimiourgia lemmatization
+	#we execute lemmatization
 	string_five = [token.lemma_ for token in string_four if not ((token.lemma_ == "-PRON-") | (token.pos_ == "NUM"))]
 	
 	string_six = [token for token in string_five if not token in nlp.Defaults.stop_words]
@@ -118,26 +112,19 @@ def diadikasia_preprocessing_new(string):
 	string_teliko = [token.norm_ for token in string_eight]
 	return string_teliko
 
-
-#gia mia timi	
+	
 string_new = diadikasia_preprocessing_new(kainourgio['OriginalTweet'][3])
 teliko_new.index
-for i in teliko_new.index:
-	teliko_new.at[i,"tweets"]=diadikasia_preprocessing_new(kainourgio['tweets'][i])
-	print("lexi pou epexergazomaste einai h:",i )
 
 teliko_new.to_csv('got_with_POS_pre_2_1.csv',index=False)
-
 teliko_new = pd.read_csv('got_with_POS_pre_2_3.csv')
+
 teliko_new["tweets"]=teliko_new["tweets"].apply(literal_eval)
 
-type(teliko_new['tweets'][0])
-
-for i in range(0,100):
-	print(i , teliko_new['tweets'][i])
  
 test = teliko_new[:300] 
-    
+
+# we visualize some data  
 x=teliko_new['ADJ'].index.values
 y=	teliko_new['ADJ'].values
 plt.scatter(x,y,alpha = 0.5,marker='.',label='ADJ')
@@ -155,22 +142,18 @@ plt.xticks(rotation=90)
 plt.legend()
 
 
-
-
 #we apply this function to deal with import issuses, list of strings should work properly afeter this
 teliko_new["tweets"]=teliko_new["tweets"].apply(literal_eval)
 
-
 test_kommati = teliko_new
-#test_kommati['tweets'][0]
 
-#ftiaxnoume mia megali lista me oles tis lexeis
+#we create a list with all the words of the users
 string_list =[]
 for i in test_kommati.index:
 	for j in range(0,len(test_kommati["tweets"][i])):
 		string_list.append(test_kommati["tweets"][i][j])
         
-#sunartisi gia na upologisoume tis ksexwristes times se mia lista	
+#function to find the unique values	
 def unique(list1):   
     # intilize a null list 
     unique_list = []       
@@ -189,7 +172,7 @@ most_occur = Counter.most_common(60000)
 most_occur.keys 
 least_common = Counter.most_common()[-100:]
 type(most_occur)
-#upologizoume tis lexeis pou emfanizontai pio syxna me skopo na tis emfanizoume swsta
+#we find the most common words
 keys = []
 values = []
 for k,v in most_occur[:1000]:
@@ -203,19 +186,19 @@ sns.barplot(x=keys[:100],y=values[:100] )
 xlabel = ("lexeis")
 ylabel = ("arithmos emfanisewn")	
 plt.savefig("most_occur.png", dpi=2000)
-#emfanizoume tis pio sunxes lexeis
+#printing most common words
 for k,v in most_occur:
     print(k,v)
     print(f"{k:{10}} {v:>{10}}")
 	
 
-#sunartisi gia na doume an ena string exei mesa noumera
+#function to check if there is a number in a word
 def num_there(s):
     return any(i.isdigit() for i in s)	
 
 
 most_common_15k = keys
-#diagrafoume oses lexeis exoun akoma simeia stixis i arithmous
+#removing words with punctuation and numbers that continues to exist in the words
 for i in teliko_new.index:
     teliko_new["tweets"][i] = [x for x in teliko_new["tweets"][i] if   bool(re.match('^[a-zA-Z]*$',x))]
     print(i,"grammata")
@@ -228,7 +211,7 @@ for i in teliko_new.index:
 
 teliko_new.to_csv('got_with_POS_pre_2_3.csv',index=False)
 
-
+# make dataset with specific vocabulary
 for i in teliko_new.index:	
 	teliko_new["tweets"][i] = [x for x in teliko_new["tweets"][i] if  x in most_common_15k]
 
@@ -240,14 +223,13 @@ for i in test_kommati.index:
 
 
 test_kommati.to_csv('dataset_8K_uniq_words',index=False)
-#sunartisi gia allagi ta -1 se 0 wste na exoume omoiomorfes katigories
+
 test_kommati.to_csv('dataset_15K_uniq_words',index=False)
 
 
 teliko_new = pd.read_csv("dataset_10K_uniq_words")
 teliko_new["OriginalTweet"] =teliko_new["OriginalTweet"].apply(literal_eval)
 
-teliko_new["OriginalTweet"][0]        
 
 
 
